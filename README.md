@@ -1,4 +1,4 @@
-# aethhar.github.io 🐉💓🍓⛓️‍💥
+# aethhar.github.io 🐉 🍓 ⛓️‍💥
 
 Independent AETHHAR / ETA link hub hosted with GitHub Pages.
 
