@@ -95,6 +95,31 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <p class="fine">Die technischen Forschungsoriginale sind nicht Teil dieser öffentlichen Visualisierung. Die Ansicht ist eine eigenständige, vereinfachte Darstellung der Verhältniswerte, <strong>kein</strong> veröffentlichtes, baubares Originalmodell. <a href="https://github.com/aethhar">GitHub-Projektübersicht</a>.</p>
 </section>
 </div>
+<section class="panel" id="ergebnisse" style="margin-top:18px">
+<h2>Ungewöhnliche STA-Ergebnisse – Originalzahlen</h2>
+<p>Diese vier bereits dokumentierten Ergebnisse stammen überwiegend aus <strong>reduzierten Modellrechnungen</strong>. Sie sind Hinweise für gezielte Folgeprüfungen, noch kein Nachweis für eine funktionierende Energieanlage.</p>
+<div class="statgrid" style="margin:15px 0">
+<div class="stat"><span>U-001 · Anteil l=6 bei 0°</span><strong>91,6840 %</strong><span>bei 180°: 5,1576 %</span></div>
+<div class="stat"><span>U-004 · Effektive Kapazität</span><strong>≈ 886,0 pF</strong><span>Geometrie-Vergleich: ≈ 878,4 pF</span></div>
+</div>
+<h3>U-001 · CUT/CYCLE-Phasenwirkung</h3>
+<p>Beim Wechsel von 0° zu 180° sinkt im historischen Modell der Anteil der Feldordnung l=6 von <strong>91,6840 % auf 5,1576 %</strong>. Vorläufige Klasse U2; vollständige E/H- und Last-Auswertung noch offen.</p>
+<h3>U-002 · Zwei Maxima bei 0°</h3>
+<p>Feldordnungsmaximum und erster Empfänger-Proxy liegen beide bei 0°. Die Modellschichten sind verwandt, daher noch <strong>keine unabhängige Bestätigung</strong>.</p>
+<h3>U-003 · Negatives Topologie-Ergebnis</h3>
+<p>Bestimmte S1-Topologieübergänge führten <strong>nicht</strong> zu einem sprunghaften Anstieg des vereinfachten Empfänger-Proxys.</p>
+<h3>U-004 · Lokaler LC-Modus</h3>
+<p>Die aus dem reduzierten Modus abgeleitete effektive Kapazität beträgt <strong>≈ 886,0 pF</strong> gegenüber <strong>≈ 878,4 pF</strong> im geometrischen Vergleich. Unabhängige Überprüfung noch erforderlich.</p>
+<p><a href="https://github.com/aethhar/open-source-power-electronic-tools/blob/main/STA_RESEARCH/ANOMALIES/UNUSUAL_RESULTS_REGISTER.md">↗ Originalregister U-001 bis U-004 ansehen</a></p>
+<hr>
+<h3>Technische Prüfungen</h3>
+<ul><li><strong>S1:</strong> Geometrie-/Elmer-Mesh-Pipeline erfolgreich</li>
+<li><strong>Branch-B T-CON:</strong> 20-Zeitschritt-openEMS-Smoke der Gesamtbaugruppe erfolgreich, kein Wirkungsbeweis</li>
+<li><strong>Sierpinski T-ISO:</strong> 708 zu nahe Segmentpaare; nicht baureif</li>
+<li><strong>G2A:</strong> neun Frequenzpunkte gerechnet, Energiebilanz nicht bestanden</li></ul>
+<div class="note"><strong>Wissenschaftliche Grenze:</strong> Diese Befunde belegen bisher keine zusätzliche Energieerzeugung, keinen gemessenen Wirkungsgrad und keine baureife Gesamtanlage.</div>
+<p class="fine"><a href="https://github.com/aethhar/sta-private-version-evidence/blob/audit/sta-ratio-lock-v1-2026-10-06/ERGEBNISSE_START_HIER.md">↗ Gesicherte technische STA-Forschungsübersicht (privates Repo)</a></p>
+</section>
 </main>
 <footer>🐉 AETHHAR / ETA · Visueller Forschungsatlas · keine Anmeldung nötig · keine Analyse-Cookies. ORCID-Profil: <a href="https://orcid.org/0009-0000-0017-552X" rel="noopener noreferrer">0009-0000-0017-552X</a> (öffentliche Forscherkennung, keine Validierung der STA).</footer>
 <script type="module">
