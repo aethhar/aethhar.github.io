@@ -36,24 +36,25 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <body>
 <header><a href="./">← AETHHAR / ETA</a><div class="eyebrow">STA · Forschungsatlas · 3D</div>
 <h1>Wie ist die STA aufgebaut?</h1>
-<p class="intro">Drehe die Geometrie mit dem Finger. Blende einzelne Bauteile ein und aus. Die Darstellung erklärt den mathematischen Aufbau – <strong>keinen bewiesenen Energieeffekt</strong>.</p>
+<p class="intro">Drehe die Geometrie mit dem Finger und blende Bauteile ein und aus. <strong>Das ist ein vereinfachtes Teilmodell, keine fertig zusammengesetzte STA.</strong> Es macht die Raum- und Größenverhältnisse sichtbar – <strong>keinen nachgewiesenen Energieeffekt</strong>.</p>
 </header>
 <main>
 <div class="shell">
 <section class="stage" aria-label="Interaktiver STA-3D-Viewer">
 <div id="view"><div id="loading">3D-Ansicht wird geladen …<br>Bitte JavaScript aktivieren.</div></div>
-<div class="stage-top"><span class="pill">Interaktive Referenz · 1 ft</span><span class="pill">Nicht bau- oder leistungsvalidiert</span></div>
-<div class="caption"><strong>Bedienung:</strong> Ein Finger = drehen · zwei Finger = zoomen · Maus = ziehen / scrollen. Die Kugelhüllen sind absichtlich durchsichtig.</div>
+<div class="stage-top"><span class="pill">Interaktive Teilgeometrie · 1 ft</span><span class="pill">Noch nicht vollständig zusammengesetzt</span></div>
+<div class="caption"><strong>Bedienung:</strong> Ein Finger = drehen · zwei Finger = zoomen. Idealflächen ohne Öffnungen, schematische Drahtkanten. <strong>Fehlende Bauteile werden nicht vorgetäuscht.</strong></div>
 </section>
 <aside class="side">
 <section class="panel">
+<h2>Stand der Konstruktion</h2><div class="note"><strong>Unvollständige Referenz:</strong> Die sichtbaren Hüllen sind ideale Flächen, die Merkaba ist nur als 12-Kanten-Struktur dargestellt. Es fehlen das Sierpinski-Leiternetz, die tatsächlichen S1/S2/S3-Durchführungen, elektrische Isolation und Kontakte sowie die festgelegten Quellen-, Last- und Antennenanschlüsse. Die optionale z-Achse ist nur ein Platzhalter.</div>
 <h2>Bauteile ansehen</h2>
 <label class="control"><input type="checkbox" data-layer="merkaba" checked><span class="dot mb"></span>Merkaba · zwei Tetraeder</label>
 <label class="control"><input type="checkbox" data-layer="s1" checked><span class="dot s1"></span>S1 · innere Kugel</label>
 <label class="control"><input type="checkbox" data-layer="s2" checked><span class="dot s2"></span>S2 · mittlere Kugel</label>
 <label class="control"><input type="checkbox" data-layer="s3" checked><span class="dot s3"></span>S3 · äußere Kugel</label>
-<label class="control"><input type="checkbox" data-layer="crossings" checked><span class="dot cross"></span>6 T-CON-Kreuzungen (Vergleich)</label>
-<label class="control"><input type="checkbox" data-layer="spikes"><span class="dot ax"></span>±z-Achsen (nur schematisch)</label>
+<label class="control"><input type="checkbox" data-layer="crossings" checked><span class="dot cross"></span>6 T-CON-Kreuzungspunkte (nur Vergleich)</label>
+<label class="control"><input type="checkbox" data-layer="spikes"><span class="dot ax"></span>±z-Verlauf (Platzhalter, keine Spike-Geometrie)</label>
 <div class="range-row"><label for="opacity">Hüllen</label><input type="range" id="opacity" min="3" max="25" value="9"><output id="opacityOut">9 %</output></div>
 <div class="actions"><button id="reset" type="button">Ansicht zurücksetzen</button><button id="spin" type="button" aria-pressed="false">Automatisch drehen</button><button id="snapshot" type="button">Bild speichern</button></div>
 </section>
@@ -76,13 +77,13 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <div class="stat"><strong>255,154 mm</strong><span>Radius S2 = φ × S1</span></div>
 <div class="stat"><strong>412,848 mm</strong><span>Radius S3 = φ × S2</span></div>
 </div>
-<div class="status"><strong>Geometrisch geprüft:</strong> Verhältnisformeln, S1-Volumenmesh und das definierte T-CON-Vergleichsmodell mit positivem Merkaba↔S1-Abstand.</div>
-<div class="status open"><strong>Offen:</strong> T-ISO-Isolation, Sierpinski-Leiterführung, reale Material-/Kontaktdefinitionen, Löcher durch alle Kugeln, Endpunkte der Spikes und Fertigungstoleranzen.</div>
-<p class="fine">Die gezeigten Kugeln sind ideale Mittelpunktflächen ohne Bohrungen; die Linien sind schematische Leiter. Sie sind <strong>keine</strong> freigegebene Fertigungs-STL.</p>
+<div class="status"><strong>Geometrisch geprüft:</strong> Verhältnisformeln, S1-Volumenmesh und das separate T-CON-Vergleichsmodell mit positivem Merkaba↔S1-Abstand. Die hier gezeigte vereinfachte Grafik ist nicht das exakte T-CON-Solvermodell.</div>
+<div class="status open"><strong>Für eine vollständige Baugruppe offen:</strong> Sierpinski-Leiterführung, T-ISO-Kontakt- und Isolationsgeometrie, Durchführungen in S1/S2/S3, reale ±z-Spikes, Quelle/Rückleiter, Empfänger/Last, Materialien, Fertigungstoleranzen und vollständiges globales No-Short-Audit. Diese Komponenten sind in der 3D-Ansicht <strong>nicht</strong> vollständig konstruiert.</div>
+<p class="fine">Die gezeigten Kugeln sind ideale Mittelpunktflächen ohne Bohrungen; die Merkaba ist ein Drahtkantenschema. Der vorhandene T-CON-Solver-Smoke nutzt zusätzliche Komponenten, die hier nicht visualisiert sind. Dies ist <strong>kein</strong> Fertigungsmodell.</p>
 </section>
 <section class="panel">
 <h2>Was bewirkt das?</h2>
-<p><strong>Was gezeigt ist:</strong> die räumliche Anordnung und die Möglichkeit, eine definierte Referenzbaugruppe an den elektromagnetischen Solver zu übergeben.</p>
+<p><strong>Was gezeigt ist:</strong> eine mathematisch nachvollziehbare Teilgeometrie. <strong>Getrennt davon</strong> wurde ein komplexeres, eingefrorenes T-CON-Komparatormodell in openEMS gestartet; dieses konkrete Solvermodell wird hier noch nicht geladen.</p>
 <p><strong>Was offen ist:</strong> Eine belastbare Energiebilanz, messbarer Wirkungsgrad, reproduzierbare Resonanz- oder Übertragungsvorteile und irgendeine zusätzliche Energiequelle.</p>
 <div class="note"><strong>Der Unterschied:</strong> 20 erfolgreiche Simulations-Zeitschritte sind ein technischer Funktionstest des Simulationsaufbaus. Sie beweisen nicht, dass ein reales Gerät Energie erzeugt oder besonders effizient ist.</div>
 <h3>Aktueller Prüfstand</h3>
@@ -91,7 +92,7 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <li><strong>Sierpinski T-ISO:</strong> 708 zu nahe Segmentpaare im globalen Geometrie-Audit; <strong>nicht baureif</strong>.</li>
 <li><strong>G2A:</strong> Solverlauf vorhanden, Energiebilanz aktuell nicht bestanden.</li>
 </ul>
-<p class="fine">Die technischen Forschungsoriginale sind nicht Teil dieser öffentlichen Visualisierung. Diese Ansicht enthält nur eine aus freigegebenen Verhältniswerten nachkonstruierte, vereinfachte Referenz. <a href="https://github.com/aethhar">GitHub-Projektübersicht</a>.</p>
+<p class="fine">Die technischen Forschungsoriginale sind nicht Teil dieser öffentlichen Visualisierung. Die Ansicht ist eine eigenständige, vereinfachte Darstellung der Verhältniswerte, <strong>kein</strong> veröffentlichtes, baubares Originalmodell. <a href="https://github.com/aethhar">GitHub-Projektübersicht</a>.</p>
 </section>
 </div>
 </main>
@@ -122,7 +123,7 @@ for(const [name,r,color] of [["s1",radii.s1,0x59e0e1],["s2",radii.s2,0xb99aff],[
 const g=layer(name);const mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.09,side:THREE.DoubleSide,depthWrite:false});shellMats.push(mat);
 g.add(new THREE.Mesh(new THREE.SphereGeometry(r,48,32),mat));
 const lineMat=new THREE.LineBasicMaterial({color,transparent:true,opacity:.68});
-for(const plane of ["xy","xz","yz"]){const pts=[];for(let i=0;i<=128;i++){const t=2*Math.PI*i/128;pts.push(new THREE.Vector3(plane==="yz"?0:r*Math.cos(t),plane==="xz"?0:r*Math.sin(t),plane==="xy"?0:(plane==="xz"?r*Math.sin(t):r*Math.sin(t))))}g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat))}
+for(const plane of ["xy","xz","yz"]){const pts=[];for(let i=0;i<=128;i++){const t=2*Math.PI*i/128;pts.push(new THREE.Vector3(plane==="yz"?0:r*Math.cos(t),plane==="xz"?0:(plane==="yz"?r*Math.cos(t):r*Math.sin(t)),plane==="xy"?0:r*Math.sin(t)))}g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat))}
 }
 const cross=layer("crossings");for(let axis=0;axis<3;axis++)for(let sign of [-1,1]){const point=[0,0,0];point[axis]=q*sign;const bead=new THREE.Mesh(new THREE.SphereGeometry(6,12,8),new THREE.MeshBasicMaterial({color:0xfff07b}));bead.position.set(...point);cross.add(bead)}
 const spikes=layer("spikes");const dashed=new THREE.LineDashedMaterial({color:0xd5faeb,dashSize:14,gapSize:11});
