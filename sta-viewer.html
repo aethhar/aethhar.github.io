@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1021">
+<meta name="description" content="STA Forschungsgeometrie verständlich: interaktives 3D-Modell, verifizierte Relationen, offene Bau- und Physikprüfungen.">
+<title>STA · 3D Forschungsatlas · AETHHAR / ETA</title>
+<style>
+:root{color-scheme:dark;--bg:#08101e;--panel:#101c32;--line:#31405b;--text:#f5f8ff;--muted:#b6c8e0;--gold:#ffca7a;--cyan:#59e0e1;--violet:#b99aff;--blue:#78a7ff}
+*{box-sizing:border-box}body{margin:0;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:radial-gradient(ellipse at top,#1b3054 0,var(--bg) 55%);color:var(--text)}
+a{color:#93e8f2}a:hover{text-decoration:underline}header,main,footer{max-width:1150px;margin:auto;padding-left:18px;padding-right:18px}
+header{padding-top:18px;padding-bottom:12px}header a{font-weight:650;text-decoration:none}.eyebrow{color:var(--cyan);text-transform:uppercase;font-size:12px;letter-spacing:.14em;font-weight:800;margin:23px 0 8px}h1{font-size:clamp(31px,6vw,54px);line-height:1.12;margin:0 0 10px}h2{font-size:22px;margin:0 0 10px}h3{font-size:17px;margin:0 0 6px}p{margin:8px 0 12px}.intro{color:var(--muted);max-width:850px;font-size:17px}
+.shell{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:18px;align-items:start}
+.stage{background:linear-gradient(135deg,#0b162a,#0a1326);border:1px solid var(--line);border-radius:22px;overflow:hidden;position:relative;min-width:0}
+#view{height:clamp(380px,59vw,660px);min-height:380px;touch-action:none;position:relative}
+#view canvas{width:100%;height:100%;display:block}#loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);pointer-events:none;text-align:center;padding:20px}
+.stage-top{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;pointer-events:none}
+.pill{display:inline-block;background:rgba(8,18,36,.86);border:1px solid #48627a;padding:5px 10px;border-radius:99px;font-size:12px;color:#d4f9ff;backdrop-filter:blur(8px)}
+.caption{padding:12px 15px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+.side{display:grid;gap:14px}.panel{background:rgba(17,28,49,.94);border:1px solid var(--line);border-radius:19px;padding:18px}
+.note{border-left:3px solid var(--gold);padding:10px 13px;background:rgba(255,202,122,.08);margin:14px 0;border-radius:0 8px 8px 0;color:#fff0d7}
+.control{display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer}.control input{accent-color:var(--cyan);width:19px;height:19px}.dot{height:12px;width:12px;border-radius:50%;display:inline-block;flex-shrink:0}.s1{background:#59e0e1}.s2{background:#b99aff}.s3{background:#78a7ff}.mb{background:linear-gradient(120deg,#ffca7a,#ff719e)}.cross{background:#f7e46f}.ax{background:#d5faeb}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}button,.file-button{background:#263d60;border:1px solid #5c86b3;color:#fff;padding:10px 13px;border-radius:12px;font:inherit;font-weight:650;cursor:pointer}button:hover,.file-button:hover{background:#315079}.file-button{display:block;text-align:center;width:100%}button:focus-visible,.file-button:focus-visible,a:focus-visible{outline:3px solid #f8d47e;outline-offset:3px}
+small,.hint{color:var(--muted)}.hint{font-size:13px;line-height:1.45}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{border:1px solid #38516f;border-radius:12px;padding:11px}.stat strong{display:block;font-size:18px;color:#fff}.stat span{color:var(--muted);font-size:12px}
+.sections{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.status{border-left:3px solid var(--cyan);padding-left:12px;margin:13px 0}.status.open{border-color:#ffca7a}
+ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);font-size:13px}.privacy{color:#c9f4e8;font-size:13px}footer{color:var(--muted);font-size:13px;padding-top:28px;padding-bottom:38px}
+#fileInput{display:none}.range-row{display:flex;align-items:center;gap:12px;margin:14px 0}.range-row input{flex:1;accent-color:var(--cyan)}.file-result{font-size:13px;color:#c9f4e8;overflow-wrap:anywhere}hr{border:0;border-top:1px solid #31405b;margin:15px 0}
+@media(max-width:780px){.shell,.sections{grid-template-columns:1fr}#view{height:390px;min-height:390px}.panel{padding:16px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
+</script>
+</head>
+<body>
+<header><a href="./">← AETHHAR / ETA</a><div class="eyebrow">STA · Forschungsatlas · 3D</div>
+<h1>Wie ist die STA aufgebaut?</h1>
+<p class="intro">Drehe die Geometrie mit dem Finger. Blende einzelne Bauteile ein und aus. Die Darstellung erklärt den mathematischen Aufbau – <strong>keinen bewiesenen Energieeffekt</strong>.</p>
+</header>
+<main>
+<div class="shell">
+<section class="stage" aria-label="Interaktiver STA-3D-Viewer">
+<div id="view"><div id="loading">3D-Ansicht wird geladen …<br>Bitte JavaScript aktivieren.</div></div>
+<div class="stage-top"><span class="pill">Interaktive Referenz · 1 ft</span><span class="pill">Nicht bau- oder leistungsvalidiert</span></div>
+<div class="caption"><strong>Bedienung:</strong> Ein Finger = drehen · zwei Finger = zoomen · Maus = ziehen / scrollen. Die Kugelhüllen sind absichtlich durchsichtig.</div>
+</section>
+<aside class="side">
+<section class="panel">
+<h2>Bauteile ansehen</h2>
+<label class="control"><input type="checkbox" data-layer="merkaba" checked><span class="dot mb"></span>Merkaba · zwei Tetraeder</label>
+<label class="control"><input type="checkbox" data-layer="s1" checked><span class="dot s1"></span>S1 · innere Kugel</label>
+<label class="control"><input type="checkbox" data-layer="s2" checked><span class="dot s2"></span>S2 · mittlere Kugel</label>
+<label class="control"><input type="checkbox" data-layer="s3" checked><span class="dot s3"></span>S3 · äußere Kugel</label>
+<label class="control"><input type="checkbox" data-layer="crossings" checked><span class="dot cross"></span>6 T-CON-Kreuzungen (Vergleich)</label>
+<label class="control"><input type="checkbox" data-layer="spikes"><span class="dot ax"></span>±z-Achsen (nur schematisch)</label>
+<div class="range-row"><label for="opacity">Hüllen</label><input type="range" id="opacity" min="3" max="25" value="9"><output id="opacityOut">9 %</output></div>
+<div class="actions"><button id="reset" type="button">Ansicht zurücksetzen</button><button id="spin" type="button" aria-pressed="false">Automatisch drehen</button><button id="snapshot" type="button">Bild speichern</button></div>
+</section>
+<section class="panel">
+<h2>Eigene 3D-Datei</h2><p class="hint">Wähle eine vorhandene <strong>.OBJ</strong> oder <strong>.STL</strong> vom Gerät. Sie wird ausschließlich hier im Browser dargestellt – <strong>kein Upload</strong> auf diese Website.</p>
+<label class="file-button" for="fileInput">OBJ / STL lokal öffnen</label><input id="fileInput" type="file" accept=".obj,.stl">
+<p id="fileStatus" class="file-result" role="status">Aktiv: schematische STA-Referenz</p>
+<button id="backModel" type="button" hidden>Zur Referenz zurück</button>
+<p class="fine">Importierte Modelle sind nicht automatisch geprüft. Maßstab kann für die Darstellung angepasst werden; die Datei selbst bleibt unverändert.</p>
+</section>
+</aside>
+</div>
+<div class="sections">
+<section class="panel">
+<h2>Was ist geometrisch bestimmt?</h2>
+<p>Die aktuelle <strong>Branch-B-Referenz</strong> beginnt mit 304,8 mm Merkaba-Durchmesser. Die Kugelmittelradien folgen festen Relationen:</p>
+<div class="statgrid">
+<div class="stat"><strong>152,4 mm</strong><span>Merkaba-Radius R<sub>M</sub></span></div>
+<div class="stat"><strong>157,694 mm</strong><span>Radius S1 (Mitte)</span></div>
+<div class="stat"><strong>255,154 mm</strong><span>Radius S2 = φ × S1</span></div>
+<div class="stat"><strong>412,848 mm</strong><span>Radius S3 = φ × S2</span></div>
+</div>
+<div class="status"><strong>Geometrisch geprüft:</strong> Verhältnisformeln, S1-Volumenmesh und das definierte T-CON-Vergleichsmodell mit positivem Merkaba↔S1-Abstand.</div>
+<div class="status open"><strong>Offen:</strong> T-ISO-Isolation, Sierpinski-Leiterführung, reale Material-/Kontaktdefinitionen, Löcher durch alle Kugeln, Endpunkte der Spikes und Fertigungstoleranzen.</div>
+<p class="fine">Die gezeigten Kugeln sind ideale Mittelpunktflächen ohne Bohrungen; die Linien sind schematische Leiter. Sie sind <strong>keine</strong> freigegebene Fertigungs-STL.</p>
+</section>
+<section class="panel">
+<h2>Was bewirkt das?</h2>
+<p><strong>Was gezeigt ist:</strong> die räumliche Anordnung und die Möglichkeit, eine definierte Referenzbaugruppe an den elektromagnetischen Solver zu übergeben.</p>
+<p><strong>Was offen ist:</strong> Eine belastbare Energiebilanz, messbarer Wirkungsgrad, reproduzierbare Resonanz- oder Übertragungsvorteile und irgendeine zusätzliche Energiequelle.</p>
+<div class="note"><strong>Der Unterschied:</strong> 20 erfolgreiche Simulations-Zeitschritte sind ein technischer Funktionstest des Simulationsaufbaus. Sie beweisen nicht, dass ein reales Gerät Energie erzeugt oder besonders effizient ist.</div>
+<h3>Aktueller Prüfstand</h3>
+<ul>
+<li><strong>T-CON:</strong> sechs Kreuzungen im leitenden Vergleichszustand kontrolliert.</li>
+<li><strong>Sierpinski T-ISO:</strong> 708 zu nahe Segmentpaare im globalen Geometrie-Audit; <strong>nicht baureif</strong>.</li>
+<li><strong>G2A:</strong> Solverlauf vorhanden, Energiebilanz aktuell nicht bestanden.</li>
+</ul>
+<p class="fine">Die technischen Forschungsoriginale sind nicht Teil dieser öffentlichen Visualisierung. Diese Ansicht enthält nur eine aus freigegebenen Verhältniswerten nachkonstruierte, vereinfachte Referenz. <a href="https://github.com/aethhar">GitHub-Projektübersicht</a>.</p>
+</section>
+</div>
+</main>
+<footer>🐉 AETHHAR / ETA · Visueller Forschungsatlas · keine Anmeldung nötig · keine Analyse-Cookies. ORCID-Profil: <a href="https://orcid.org/0009-0000-0017-552X" rel="noopener noreferrer">0009-0000-0017-552X</a> (öffentliche Forscherkennung, keine Validierung der STA).</footer>
+<script type="module">
+import * as THREE from "three";
+import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {OBJLoader} from "three/addons/loaders/OBJLoader.js";
+import {STLLoader} from "three/addons/loaders/STLLoader.js";
+const view=document.getElementById("view"), loading=document.getElementById("loading");
+const Rm=152.4, q=Rm/Math.sqrt(3), radii={s1:157.69375,s2:255.15384731342874,s3:412.84759731342876};
+let scene,camera,renderer,controls,modelRoot,userRoot,imported=null,rotating=false,frame=0;
+const layers={},shellMats=[];
+function init(){
+scene=new THREE.Scene();scene.background=new THREE.Color(0x091425);
+camera=new THREE.PerspectiveCamera(42,1,1,10000);camera.position.set(780,550,1170);
+renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.8));renderer.outputColorSpace=THREE.SRGBColorSpace;
+view.appendChild(renderer.domElement);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.075;controls.minDistance=340;controls.maxDistance=2900;controls.target.set(0,0,0);controls.update();
+scene.add(new THREE.AmbientLight(0xffffff,1.2));const light=new THREE.DirectionalLight(0xffffff,2.0);light.position.set(300,600,950);scene.add(light);
+const side=new THREE.DirectionalLight(0x71d5ff,1.0);side.position.set(-500,-250,-300);scene.add(side);
+modelRoot=new THREE.Group();userRoot=new THREE.Group();scene.add(modelRoot,userRoot);userRoot.visible=false;
+function colorMat(col,em=0){return new THREE.MeshStandardMaterial({color:col,metalness:.35,roughness:.35,emissive:col,emissiveIntensity:em})}
+function tube(a,b,r,col){const v=new THREE.Vector3(...a),w=new THREE.Vector3(...b),diff=w.clone().sub(v);const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,diff.length(),10),colorMat(col,.13));mesh.position.copy(v).add(w).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),diff.normalize());return mesh}
+function layer(name){layers[name]=new THREE.Group();modelRoot.add(layers[name]);return layers[name]}
+const merk=layer("merkaba");const A=[[q,q,q],[q,-q,-q],[-q,q,-q],[-q,-q,q]], B=A.map(p=>p.map(c=>-c));
+for(const [tetra,color] of [[A,0xffcb76],[B,0xff769f]])for(let i=0;i<4;i++)for(let j=i+1;j<4;j++)merk.add(tube(tetra[i],tetra[j],2.0,color));
+for(const [name,r,color] of [["s1",radii.s1,0x59e0e1],["s2",radii.s2,0xb99aff],["s3",radii.s3,0x78a7ff]]){
+const g=layer(name);const mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.09,side:THREE.DoubleSide,depthWrite:false});shellMats.push(mat);
+g.add(new THREE.Mesh(new THREE.SphereGeometry(r,48,32),mat));
+const lineMat=new THREE.LineBasicMaterial({color,transparent:true,opacity:.68});
+for(const plane of ["xy","xz","yz"]){const pts=[];for(let i=0;i<=128;i++){const t=2*Math.PI*i/128;pts.push(new THREE.Vector3(plane==="yz"?0:r*Math.cos(t),plane==="xz"?0:r*Math.sin(t),plane==="xy"?0:(plane==="xz"?r*Math.sin(t):r*Math.sin(t))))}g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat))}
+}
+const cross=layer("crossings");for(let axis=0;axis<3;axis++)for(let sign of [-1,1]){const point=[0,0,0];point[axis]=q*sign;const bead=new THREE.Mesh(new THREE.SphereGeometry(6,12,8),new THREE.MeshBasicMaterial({color:0xfff07b}));bead.position.set(...point);cross.add(bead)}
+const spikes=layer("spikes");const dashed=new THREE.LineDashedMaterial({color:0xd5faeb,dashSize:14,gapSize:11});
+for(const sign of [-1,1]){const points=[new THREE.Vector3(0,0,sign*125),new THREE.Vector3(0,0,sign*505)];const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),dashed);l.computeLineDistances();spikes.add(l)}spikes.visible=false;
+for(const box of document.querySelectorAll("[data-layer]"))box.addEventListener("change",()=>{layers[box.dataset.layer].visible=box.checked});
+document.getElementById("opacity").addEventListener("input",e=>{const opacity=Number(e.target.value)/100;shellMats.forEach(m=>m.opacity=opacity);document.getElementById("opacityOut").textContent=e.target.value+" %"});
+document.getElementById("reset").onclick=resetView;
+document.getElementById("spin").onclick=()=>{rotating=!rotating;controls.autoRotate=rotating;controls.autoRotateSpeed=1.5;const btn=document.getElementById("spin");btn.setAttribute("aria-pressed",String(rotating));btn.textContent=rotating?"Drehen stoppen":"Automatisch drehen"};
+document.getElementById("snapshot").onclick=()=>{render();const link=document.createElement("a");link.download="STA-3D-Referenz.png";link.href=renderer.domElement.toDataURL("image/png");link.click()};
+document.getElementById("fileInput").addEventListener("change",loadFile);
+document.getElementById("backModel").onclick=()=>{userRoot.clear();imported=null;userRoot.visible=false;modelRoot.visible=true;document.getElementById("fileStatus").textContent="Aktiv: schematische STA-Referenz";document.getElementById("backModel").hidden=true;document.getElementById("fileInput").value="";resetView()};
+window.addEventListener("resize",resize);resize();loading.remove();animate();
+}
+function resetView(){camera.position.set(780,550,1170);controls.target.set(0,0,0);controls.update()}
+function resize(){const width=view.clientWidth,height=view.clientHeight;camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height,false)}
+function render(){renderer.render(scene,camera)}
+function animate(){frame=requestAnimationFrame(animate);controls.update();render()}
+async function loadFile(e){
+const f=e.target.files?.[0];if(!f)return;const status=document.getElementById("fileStatus");const ext=f.name.split(".").pop().toLowerCase();
+if(!["stl","obj"].includes(ext)){status.textContent="Bitte OBJ oder STL wählen.";return}
+if(f.size>16*1024*1024){status.textContent="Die Datei ist für die Handy-Ansicht zu groß (maximal 16 MB).";return}
+status.textContent="Lade lokal: "+f.name;
+try{
+let object;
+if(ext==="obj")object=new OBJLoader().parse(await f.text());
+else{const geo=new STLLoader().parse(await f.arrayBuffer());geo.computeVertexNormals();object=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x9bf2df,metalness:.1,roughness:.55,side:THREE.DoubleSide}))}
+const bbox=new THREE.Box3().setFromObject(object);if(bbox.isEmpty())throw Error("Keine 3D-Geometrie gefunden");
+const dimensions=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3()),size=Math.max(dimensions.x,dimensions.y,dimensions.z);if(!(size>0))throw Error("Ungültige Geometrieabmessungen");
+const sc=750/size;object.scale.setScalar(sc);object.position.set(-center.x*sc,-center.y*sc,-center.z*sc);userRoot.clear();userRoot.add(object);imported=object;modelRoot.visible=false;userRoot.visible=true;document.getElementById("backModel").hidden=false;
+status.textContent="Lokal geöffnet: "+f.name+" · Original-Bounding-Box "+dimensions.toArray().map(x=>x.toFixed(2)).join(" × ")+" Dateieinheiten · Ansicht auf Bildschirmgröße skaliert";resetView();
+}catch(err){status.textContent="Datei konnte nicht geladen werden: "+err.message}
+}
+try{init()}catch(err){loading.textContent="3D-Ansicht nicht verfügbar: "+err.message}
+</script>
+</body>
+</html>
