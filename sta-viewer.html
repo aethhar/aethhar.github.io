@@ -64,6 +64,14 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <p id="fileStatus" class="file-result" role="status">Aktiv: schematische STA-Referenz</p>
 <button id="backModel" type="button" hidden>Zur Referenz zurück</button>
 <p class="fine">Importierte Modelle sind nicht automatisch geprüft. Maßstab kann für die Darstellung angepasst werden; die Datei selbst bleibt unverändert.</p>
+<div id="auditPanel" hidden>
+<hr><h3>Geometrie-Prüfbericht</h3>
+<label for="auditUnit">Millimeter pro Dateieinheit</label>
+<input id="auditUnit" type="number" min="0.000001" step="any" value="1" style="width:100%;padding:9px;background:#091425;color:white;border:1px solid #5c86b3;border-radius:9px">
+<p class="hint">Die Einheit muss bestätigt werden; OBJ/STL enthalten keine verlässliche Einheit. Abstand/Kollision/Kontakt sind zunächst nur Kandidaten, keine bestätigte elektrische Prüfung.</p>
+<div class="actions"><button id="runAudit" type="button">Geometrie analysieren</button><button id="saveAudit" type="button" disabled>JSON-Prüfbericht speichern</button></div>
+<p id="auditStatus" class="file-result" role="status"></p>
+</div>
 </section>
 </aside>
 </div>
@@ -127,10 +135,12 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {OBJLoader} from "three/addons/loaders/OBJLoader.js";
 import {STLLoader} from "three/addons/loaders/STLLoader.js";
+import {inspectGeometry,fingerprint,downloadAudit} from "./sta-geometry-audit.js";
 const view=document.getElementById("view"), loading=document.getElementById("loading");
 const Rm=152.4, q=Rm/Math.sqrt(3), radii={s1:157.69375,s2:255.15384731342874,s3:412.84759731342876};
 let scene,camera,renderer,controls,modelRoot,userRoot,imported=null,rotating=false,frame=0;
 const layers={},shellMats=[];
+let originalGeometry=null, originalFile=null, auditReport=null;
 function init(){
 scene=new THREE.Scene();scene.background=new THREE.Color(0x091425);
 camera=new THREE.PerspectiveCamera(42,1,1,10000);camera.position.set(780,550,1170);
@@ -159,7 +169,22 @@ document.getElementById("reset").onclick=resetView;
 document.getElementById("spin").onclick=()=>{rotating=!rotating;controls.autoRotate=rotating;controls.autoRotateSpeed=1.5;const btn=document.getElementById("spin");btn.setAttribute("aria-pressed",String(rotating));btn.textContent=rotating?"Drehen stoppen":"Automatisch drehen"};
 document.getElementById("snapshot").onclick=()=>{render();const link=document.createElement("a");link.download="STA-3D-Referenz.png";link.href=renderer.domElement.toDataURL("image/png");link.click()};
 document.getElementById("fileInput").addEventListener("change",loadFile);
-document.getElementById("backModel").onclick=()=>{userRoot.clear();imported=null;userRoot.visible=false;modelRoot.visible=true;document.getElementById("fileStatus").textContent="Aktiv: schematische STA-Referenz";document.getElementById("backModel").hidden=true;document.getElementById("fileInput").value="";resetView()};
+document.getElementById("runAudit").onclick=async()=>{
+ const status=document.getElementById("auditStatus");
+ if(!originalGeometry||!originalFile)return;
+ const mmPerUnit=Number(document.getElementById("auditUnit").value);
+ try {
+   status.textContent="Prüfe lokal …";
+   const result=inspectGeometry(originalGeometry,THREE,{mmPerUnit});
+   auditReport={...result,sourceFile:originalFile.name,sourceSizeBytes:originalFile.size,
+     sourceSha256:await fingerprint(originalFile),createdAt:new Date().toISOString(),
+     provenance:"local browser computation; no server upload"};
+   status.textContent=result.meshCount+" Meshes · "+result.triangleCount+" Dreiecke · "+result.pairCount+" Bounding-Box-Paare. Leiterabstand/Kollision/Kontakt: NICHT VERIFIZIERT.";
+   document.getElementById("saveAudit").disabled=false;
+ }catch(e){status.textContent="Analyse fehlgeschlagen: "+e.message}
+};
+document.getElementById("saveAudit").onclick=()=>{if(auditReport)downloadAudit(auditReport)};
+document.getElementById("backModel").onclick=()=>{userRoot.clear();imported=null;originalGeometry=null;originalFile=null;auditReport=null;document.getElementById("auditPanel").hidden=true;userRoot.visible=false;modelRoot.visible=true;document.getElementById("fileStatus").textContent="Aktiv: schematische STA-Referenz";document.getElementById("backModel").hidden=true;document.getElementById("fileInput").value="";resetView()};
 window.addEventListener("resize",resize);resize();loading.remove();animate();
 }
 function resetView(){camera.position.set(780,550,1170);controls.target.set(0,0,0);controls.update()}
@@ -177,6 +202,10 @@ if(ext==="obj")object=new OBJLoader().parse(await f.text());
 else{const geo=new STLLoader().parse(await f.arrayBuffer());geo.computeVertexNormals();object=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x9bf2df,metalness:.1,roughness:.55,side:THREE.DoubleSide}))}
 const bbox=new THREE.Box3().setFromObject(object);if(bbox.isEmpty())throw Error("Keine 3D-Geometrie gefunden");
 const dimensions=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3()),size=Math.max(dimensions.x,dimensions.y,dimensions.z);if(!(size>0))throw Error("Ungültige Geometrieabmessungen");
+originalGeometry=object;originalFile=f;auditReport=null;
+document.getElementById("auditPanel").hidden=false;
+document.getElementById("saveAudit").disabled=true;
+document.getElementById("auditStatus").textContent="Noch kein Bericht. Maßeinheit bestätigen und Analyse starten.";
 const sc=750/size;object.scale.setScalar(sc);object.position.set(-center.x*sc,-center.y*sc,-center.z*sc);userRoot.clear();userRoot.add(object);imported=object;modelRoot.visible=false;userRoot.visible=true;document.getElementById("backModel").hidden=false;
 status.textContent="Lokal geöffnet: "+f.name+" · Original-Bounding-Box "+dimensions.toArray().map(x=>x.toFixed(2)).join(" × ")+" Dateieinheiten · Ansicht auf Bildschirmgröße skaliert";resetView();
 }catch(err){status.textContent="Datei konnte nicht geladen werden: "+err.message}
