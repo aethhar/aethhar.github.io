@@ -59,9 +59,9 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <div class="actions"><button id="reset" type="button">Ansicht zurücksetzen</button><button id="spin" type="button" aria-pressed="false">Automatisch drehen</button><button id="snapshot" type="button">Bild speichern</button></div>
 </section>
 <section class="panel">
-<h2>Eigene 3D-Datei</h2><p class="hint">Wähle eine vorhandene <strong>.OBJ</strong> oder <strong>.STL</strong> vom Gerät. Sie wird ausschließlich hier im Browser dargestellt – <strong>kein Upload</strong> auf diese Website.</p>
-<label class="file-button" for="fileInput">OBJ / STL lokal öffnen</label><input id="fileInput" type="file" accept=".obj,.stl">
-<p id="fileStatus" class="file-result" role="status">Aktiv: schematische STA-Referenz</p>
+<h2>Eigene STA-A-Geometrien</h2><p class="hint">Wähle bis zu 10 vorhandene <strong>.OBJ</strong>- oder <strong>.STL</strong>-Dateien gleichzeitig. Vorschau, SHA-256 und Geometrie-Maße werden lokal im Browser ermittelt – <strong>kein Upload</strong> auf diese Website. Die Dateien werden nicht serverseitig gespeichert.</p>
+<label class="file-button" for="fileInput">STA-A-Dateien lokal auswählen</label><input id="fileInput" type="file" accept=".obj,.stl" multiple>
+<p id="fileStatus" class="file-result" role="status">Aktiv: schematische STA-Referenz</p><button id="exportAudit" type="button" disabled>STA-A-Prüfbericht als JSON sichern</button><p id="auditCount" class="hint">Noch keine Dateien geprüft. Bericht bleibt bis zum Export nur in diesem Browser-Tab.</p>
 <button id="backModel" type="button" hidden>Zur Referenz zurück</button>
 <p class="fine">Importierte Modelle sind nicht automatisch geprüft. Maßstab kann für die Darstellung angepasst werden; die Datei selbst bleibt unverändert.</p>
 </section>
@@ -127,10 +127,11 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {OBJLoader} from "three/addons/loaders/OBJLoader.js";
 import {STLLoader} from "three/addons/loaders/STLLoader.js";
+import {previewAudit,downloadAuditReport} from "./sta-intake.js";
 const view=document.getElementById("view"), loading=document.getElementById("loading");
 const Rm=152.4, q=Rm/Math.sqrt(3), radii={s1:157.69375,s2:255.15384731342874,s3:412.84759731342876};
 let scene,camera,renderer,controls,modelRoot,userRoot,imported=null,rotating=false,frame=0;
-const layers={},shellMats=[];
+const layers={},shellMats=[],auditRecords=new Map();
 function init(){
 scene=new THREE.Scene();scene.background=new THREE.Color(0x091425);
 camera=new THREE.PerspectiveCamera(42,1,1,10000);camera.position.set(780,550,1170);
@@ -159,6 +160,7 @@ document.getElementById("reset").onclick=resetView;
 document.getElementById("spin").onclick=()=>{rotating=!rotating;controls.autoRotate=rotating;controls.autoRotateSpeed=1.5;const btn=document.getElementById("spin");btn.setAttribute("aria-pressed",String(rotating));btn.textContent=rotating?"Drehen stoppen":"Automatisch drehen"};
 document.getElementById("snapshot").onclick=()=>{render();const link=document.createElement("a");link.download="STA-3D-Referenz.png";link.href=renderer.domElement.toDataURL("image/png");link.click()};
 document.getElementById("fileInput").addEventListener("change",loadFile);
+document.getElementById("exportAudit").addEventListener("click",()=>downloadAuditReport([...auditRecords.values()]));
 document.getElementById("backModel").onclick=()=>{userRoot.clear();imported=null;userRoot.visible=false;modelRoot.visible=true;document.getElementById("fileStatus").textContent="Aktiv: schematische STA-Referenz";document.getElementById("backModel").hidden=true;document.getElementById("fileInput").value="";resetView()};
 window.addEventListener("resize",resize);resize();loading.remove();animate();
 }
@@ -167,20 +169,43 @@ function resize(){const width=view.clientWidth,height=view.clientHeight;camera.a
 function render(){renderer.render(scene,camera)}
 function animate(){frame=requestAnimationFrame(animate);controls.update();render()}
 async function loadFile(e){
-const f=e.target.files?.[0];if(!f)return;const status=document.getElementById("fileStatus");const ext=f.name.split(".").pop().toLowerCase();
-if(!["stl","obj"].includes(ext)){status.textContent="Bitte OBJ oder STL wählen.";return}
-if(f.size>16*1024*1024){status.textContent="Die Datei ist für die Handy-Ansicht zu groß (maximal 16 MB).";return}
-status.textContent="Lade lokal: "+f.name;
-try{
-let object;
-if(ext==="obj")object=new OBJLoader().parse(await f.text());
-else{const geo=new STLLoader().parse(await f.arrayBuffer());geo.computeVertexNormals();object=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x9bf2df,metalness:.1,roughness:.55,side:THREE.DoubleSide}))}
-const bbox=new THREE.Box3().setFromObject(object);if(bbox.isEmpty())throw Error("Keine 3D-Geometrie gefunden");
-const dimensions=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3()),size=Math.max(dimensions.x,dimensions.y,dimensions.z);if(!(size>0))throw Error("Ungültige Geometrieabmessungen");
-const sc=750/size;object.scale.setScalar(sc);object.position.set(-center.x*sc,-center.y*sc,-center.z*sc);userRoot.clear();userRoot.add(object);imported=object;modelRoot.visible=false;userRoot.visible=true;document.getElementById("backModel").hidden=false;
-status.textContent="Lokal geöffnet: "+f.name+" · Original-Bounding-Box "+dimensions.toArray().map(x=>x.toFixed(2)).join(" × ")+" Dateieinheiten · Ansicht auf Bildschirmgröße skaliert";resetView();
-}catch(err){status.textContent="Datei konnte nicht geladen werden: "+err.message}
+const files=[...e.target.files||[]],status=document.getElementById("fileStatus");
+if(!files.length)return;
+if(files.length>10){status.textContent="Bitte maximal 10 Dateien je Durchgang auswählen (Handy-Speichergrenze).";return}
+let successes=0;const errors=[];
+for(const f of files){
+ const ext=f.name.split(".").pop().toLowerCase();
+ if(!["stl","obj"].includes(ext)){errors.push(f.name+": nur OBJ/STL");continue}
+ if(f.size>16*1024*1024){errors.push(f.name+": über 16 MB");continue}
+ status.textContent="Prüfe lokal "+(successes+errors.length+1)+"/"+files.length+": "+f.name;
+ try{
+  let object;
+  if(ext==="obj")object=new OBJLoader().parse(await f.text());
+  else{const geo=new STLLoader().parse(await f.arrayBuffer());geo.computeVertexNormals();
+    object=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x9bf2df,metalness:.1,roughness:.55,side:THREE.DoubleSide}))}
+  const bbox=new THREE.Box3().setFromObject(object);
+  if(bbox.isEmpty())throw Error("Keine 3D-Geometrie gefunden");
+  const dimensions=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3());
+  const size=Math.max(dimensions.x,dimensions.y,dimensions.z);
+  if(!(size>0))throw Error("Ungültige Geometrieabmessungen");
+  const rec=await previewAudit(f,object,THREE);
+  const id=rec.sha256||f.name+":"+f.size;
+  auditRecords.set(id,rec);
+  const sc=750/size;object.scale.setScalar(sc);
+  object.position.set(-center.x*sc,-center.y*sc,-center.z*sc);
+  userRoot.clear();userRoot.add(object);imported=object;
+  modelRoot.visible=false;userRoot.visible=true;
+  document.getElementById("backModel").hidden=false;
+  successes++;
+ }catch(err){errors.push(f.name+": "+err.message)}
 }
+document.getElementById("exportAudit").disabled=auditRecords.size===0;
+document.getElementById("auditCount").textContent=auditRecords.size+" unterschiedliche Dateifingerabdrücke im lokalen Bericht. Exportieren und privat dem STA-Intake übergeben; kein Elmer-Solver wurde gestartet.";
+status.textContent=successes+" Datei(en) geprüft. "+
+  (errors.length?("Fehler: "+errors.join("; ")):"Letzte Datei als Vorschau angezeigt.");
+if(successes)resetView();
+}
+
 try{init()}catch(err){loading.textContent="3D-Ansicht nicht verfügbar: "+err.message}
 </script>
 </body>
