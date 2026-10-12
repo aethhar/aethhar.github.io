@@ -59,9 +59,9 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <div class="actions"><button id="reset" type="button">Ansicht zurücksetzen</button><button id="spin" type="button" aria-pressed="false">Automatisch drehen</button><button id="snapshot" type="button">Bild speichern</button></div>
 </section>
 <section class="panel">
-<h2>Eigene STA-A-Geometrien</h2><p class="hint">Wähle bis zu 10 vorhandene <strong>.OBJ</strong>- oder <strong>.STL</strong>-Dateien gleichzeitig. Vorschau, SHA-256 und Geometrie-Maße werden lokal im Browser ermittelt – <strong>kein Upload</strong> auf diese Website. Die Dateien werden nicht serverseitig gespeichert.</p>
-<label class="file-button" for="fileInput">STA-A-Dateien lokal auswählen</label><input id="fileInput" type="file" accept=".obj,.stl" multiple>
-<p id="fileStatus" class="file-result" role="status">Aktiv: schematische STA-Referenz</p><button id="exportAudit" type="button" disabled>STA-A-Prüfbericht als JSON sichern</button><p id="auditCount" class="hint">Noch keine Dateien geprüft. Bericht bleibt bis zum Export nur in diesem Browser-Tab.</p>
+<h2>Eigene STA-A-Geometrien</h2><p class="hint">Wähle bis zu 10 <strong>.OBJ</strong>-, <strong>.STL</strong>- oder <strong>.MTL</strong>-Dateien. Der Bericht erfasst lokal alle Wavefront-Angaben: Objekte, Gruppen, Kommentare, Materialien, Flächenarten, Linien und ob die Oberfläche offen oder geschlossen ist. <strong>Kein Upload.</strong> Das ist noch kein Elmer-Volumennetz.</p>
+<label class="file-button" for="fileInput">STA-A-Dateien lokal auswählen</label><input id="fileInput" type="file" accept=".obj,.stl,.mtl,model/obj" multiple>
+<p id="fileStatus" class="file-result" role="status">Aktiv: schematische STA-Referenz</p><pre id="captureSummary" class="hint" style="white-space:pre-wrap;margin:8px 0">Noch kein OBJ-Inventar.</pre><button id="exportAudit" type="button" disabled>STA-A-Prüfbericht als JSON sichern</button><p id="auditCount" class="hint">Noch keine Dateien geprüft. Bericht bleibt bis zum Export nur in diesem Browser-Tab.</p>
 <button id="backModel" type="button" hidden>Zur Referenz zurück</button>
 <p class="fine">Importierte Modelle sind nicht automatisch geprüft. Maßstab kann für die Darstellung angepasst werden; die Datei selbst bleibt unverändert.</p>
 </section>
@@ -127,7 +127,7 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {OBJLoader} from "three/addons/loaders/OBJLoader.js";
 import {STLLoader} from "three/addons/loaders/STLLoader.js";
-import {previewAudit,downloadAuditReport} from "./sta-intake.js";
+import {previewAudit,downloadAuditReport,summarizeCapture,captureObj,sha256Of} from "./sta-intake.js";
 const view=document.getElementById("view"), loading=document.getElementById("loading");
 const Rm=152.4, q=Rm/Math.sqrt(3), radii={s1:157.69375,s2:255.15384731342874,s3:412.84759731342876};
 let scene,camera,renderer,controls,modelRoot,userRoot,imported=null,rotating=false,frame=0;
@@ -161,48 +161,81 @@ document.getElementById("spin").onclick=()=>{rotating=!rotating;controls.autoRot
 document.getElementById("snapshot").onclick=()=>{render();const link=document.createElement("a");link.download="STA-3D-Referenz.png";link.href=renderer.domElement.toDataURL("image/png");link.click()};
 document.getElementById("fileInput").addEventListener("change",loadFile);
 document.getElementById("exportAudit").addEventListener("click",()=>downloadAuditReport([...auditRecords.values()]));
-document.getElementById("backModel").onclick=()=>{userRoot.clear();imported=null;userRoot.visible=false;modelRoot.visible=true;document.getElementById("fileStatus").textContent="Aktiv: schematische STA-Referenz";document.getElementById("backModel").hidden=true;document.getElementById("fileInput").value="";resetView()};
+document.getElementById("backModel").onclick=()=>{userRoot.clear();imported=null;userRoot.visible=false;modelRoot.visible=true;document.getElementById("fileStatus").textContent="Aktiv: schematische STA-Referenz. Bereits erfasste Dateien bleiben im lokalen Bericht.";document.getElementById("backModel").hidden=true;document.getElementById("fileInput").value="";resetView()};
 window.addEventListener("resize",resize);resize();loading.remove();animate();
 }
 function resetView(){camera.position.set(780,550,1170);controls.target.set(0,0,0);controls.update()}
 function resize(){const width=view.clientWidth,height=view.clientHeight;camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height,false)}
 function render(){renderer.render(scene,camera)}
 function animate(){frame=requestAnimationFrame(animate);controls.update();render()}
+const pendingMtl=new Map();
+function mtlFor(text){
+ const names=[...text.matchAll(/^\s*mtllib\s+(.+)$/gim)].flatMap(m=>m[1].split(/\s+/));
+ if(!pendingMtl.size)return null;
+ if(names.length===1){
+  const want=names[0].split(/[\\/]/).pop().toLowerCase();
+  if(pendingMtl.has(want))return pendingMtl.get(want);
+ }
+ if(pendingMtl.size===1)return [...pendingMtl.values()][0];
+ for(const name of names){const want=name.split(/[\\/]/).pop().toLowerCase();if(pendingMtl.has(want))return pendingMtl.get(want)}
+ return null;
+}
 async function loadFile(e){
 const files=[...e.target.files||[]],status=document.getElementById("fileStatus");
 if(!files.length)return;
 if(files.length>10){status.textContent="Bitte maximal 10 Dateien je Durchgang auswählen (Handy-Speichergrenze).";return}
-let successes=0;const errors=[];
+let successes=0;const errors=[];const models=[];
 for(const f of files){
  const ext=f.name.split(".").pop().toLowerCase();
- if(!["stl","obj"].includes(ext)){errors.push(f.name+": nur OBJ/STL");continue}
+ if(ext==="mtl"){
+  if(f.size>2*1024*1024){errors.push(f.name+": MTL über 2 MB");continue}
+  pendingMtl.set(f.name.toLowerCase(),{name:f.name,text:await f.text()});
+  continue;
+ }
+ if(!["stl","obj"].includes(ext)){errors.push(f.name+": nur OBJ/STL/MTL");continue}
+ models.push(f);
+}
+if(!models.length && pendingMtl.size){status.textContent="MTL lokal gemerkt ("+pendingMtl.size+"). Jetzt die passende OBJ wählen.";return}
+for(const f of models){
+ const ext=f.name.split(".").pop().toLowerCase();
  if(f.size>16*1024*1024){errors.push(f.name+": über 16 MB");continue}
- status.textContent="Prüfe lokal "+(successes+errors.length+1)+"/"+files.length+": "+f.name;
+ status.textContent="Prüfe lokal "+(successes+errors.length+1)+"/"+models.length+": "+f.name;
  try{
-  let object;
-  if(ext==="obj")object=new OBJLoader().parse(await f.text());
+  let object=null; let raw="";
+  if(ext==="obj"){raw=await f.text();try{object=new OBJLoader().parse(raw)}catch(err){object=null;errors.push(f.name+" Vorschau: "+err.message)}}
   else{const geo=new STLLoader().parse(await f.arrayBuffer());geo.computeVertexNormals();
     object=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x9bf2df,metalness:.1,roughness:.55,side:THREE.DoubleSide}))}
+  if(object){
   const bbox=new THREE.Box3().setFromObject(object);
   if(bbox.isEmpty())throw Error("Keine 3D-Geometrie gefunden");
   const dimensions=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3());
   const size=Math.max(dimensions.x,dimensions.y,dimensions.z);
   if(!(size>0))throw Error("Ungültige Geometrieabmessungen");
-  const rec=await previewAudit(f,object,THREE);
+  const bundle=ext==="obj"?mtlFor(raw):null;
+  const rec=await previewAudit(f,object,THREE,raw,bundle);
   const id=rec.sha256||f.name+":"+f.size;
   auditRecords.set(id,rec);
+  document.getElementById("captureSummary").textContent=summarizeCapture(rec);
   const sc=750/size;object.scale.setScalar(sc);
   object.position.set(-center.x*sc,-center.y*sc,-center.z*sc);
   userRoot.clear();userRoot.add(object);imported=object;
   modelRoot.visible=false;userRoot.visible=true;
   document.getElementById("backModel").hidden=false;
+  }else if(ext==="obj"){
+   const bundle=mtlFor(raw);
+   const wave=captureObj(raw,f.name,bundle?.text??null,bundle?.name??null);
+   wave.sha256=await sha256Of(await f.arrayBuffer());wave.file_size_bytes=f.size;
+   const rec={source_name:f.name,format:"obj",file_size_bytes:f.size,sha256:wave.sha256,original_units:wave.coordinates.original_units,wavefront:wave,audit_level:wave.audit_level,elmer_handoff:wave.elmer,preview_counts:null,warnings:["Vorschau fehlgeschlagen, Wavefront-Inventar trotzdem erfasst."]};
+   auditRecords.set(wave.sha256||f.name,rec);
+   document.getElementById("captureSummary").textContent=summarizeCapture(rec);
+  }
   successes++;
  }catch(err){errors.push(f.name+": "+err.message)}
 }
 document.getElementById("exportAudit").disabled=auditRecords.size===0;
-document.getElementById("auditCount").textContent=auditRecords.size+" unterschiedliche Dateifingerabdrücke im lokalen Bericht. Exportieren und privat dem STA-Intake übergeben; kein Elmer-Solver wurde gestartet.";
+document.getElementById("auditCount").textContent=auditRecords.size+" unterschiedliche Dateifingerabdrücke im lokalen Bericht. Exportieren und privat mit tools/capture_obj.py gegenprüfen; kein Elmer-Solver wurde gestartet.";
 status.textContent=successes+" Datei(en) geprüft. "+
-  (errors.length?("Fehler: "+errors.join("; ")):"Letzte Datei als Vorschau angezeigt.");
+  (errors.length?("Fehler: "+errors.join("; ")):"Letzte Datei als Vorschau angezeigt. Inventar steht oben, JSON sichert sämtliche erfassten OBJ-Angaben.");
 if(successes)resetView();
 }
 
