@@ -28,6 +28,15 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 #fileInput{display:none}.range-row{display:flex;align-items:center;gap:12px;margin:14px 0}.range-row input{flex:1;accent-color:var(--cyan)}.file-result{font-size:13px;color:#c9f4e8;overflow-wrap:anywhere}hr{border:0;border-top:1px solid #31405b;margin:15px 0}
 @media(max-width:780px){.shell,.sections{grid-template-columns:1fr}#view{height:390px;min-height:390px}.panel{padding:16px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* Guided interpretation of the existing schematic model; no new geometry. */
+.guide-panel{border-color:#5f7295;background:linear-gradient(150deg,rgba(25,47,78,.98),rgba(16,28,49,.98))}
+.guide-kicker{color:var(--cyan);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.09em}
+.guide-title{font-size:20px;line-height:1.25;margin:8px 0}
+.guide-truth{padding:10px 12px;border-left:3px solid var(--gold);background:rgba(255,202,122,.07);border-radius:4px;font-size:14px}
+.guide-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.guide-controls button{flex:1;min-width:90px}.guide-count{font-size:13px;color:var(--muted)}
+.guide-panel button:disabled{opacity:.5;cursor:not-allowed}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
@@ -46,6 +55,23 @@ ul{padding-left:20px;margin:8px 0 15px}li{margin:5px 0}.fine{color:var(--muted);
 <div class="caption"><strong>Bedienung:</strong> Ein Finger = drehen · zwei Finger = zoomen. Idealflächen ohne Öffnungen, schematische Drahtkanten. <strong>Fehlende Bauteile werden nicht vorgetäuscht.</strong></div>
 </section>
 <aside class="side">
+<section class="panel guide-panel" id="laienfuehrung" aria-label="Geführte STA-Erklärung für Einsteiger">
+  <div class="guide-kicker">Für alle ohne technische Vorkenntnisse</div>
+  <h2>STA in 3 Minuten verstehen</h2>
+  <p class="hint">Eine geführte Erklärung, die das 3D-Schema passend ein- und ausblendet. Ohne Anmeldung, ohne wissenschaftliche Vorkenntnisse.</p>
+  <div class="guide-kicker" id="guideTag">1 · Die Forschungsfrage</div>
+  <h3 class="guide-title" id="guideTitle">Worum geht es?</h3>
+  <p id="guideLead">Wir untersuchen, wie eine definierte Anordnung von Leitern und Kugelschalen elektromagnetische Felder beeinflusst.</p>
+  <p id="guideDetail" class="hint"></p>
+  <div class="guide-truth" id="guideBoundary"></div>
+  <div class="guide-controls">
+    <button id="guidePrev" type="button" aria-label="Vorheriger Erklärschritt" disabled>← Zurück</button>
+    <span class="guide-count" id="guideCount" aria-live="polite">1 / 6</span>
+    <button id="guideNext" type="button" aria-label="Nächster Erklärschritt">Weiter →</button>
+  </div>
+  <p class="fine">Die Führung verwendet ausschließlich die vorhandene schematische Referenzgeometrie. Sie stellt keinen neuen wissenschaftlichen Nachweis dar.</p>
+</section>
+
 <section class="panel">
 <h2>Stand der Konstruktion</h2><div class="note"><strong>Unvollständige Referenz:</strong> Die sichtbaren Hüllen sind ideale Flächen, die Merkaba ist nur als 12-Kanten-Struktur dargestellt. Es fehlen das Sierpinski-Leiternetz, die tatsächlichen S1/S2/S3-Durchführungen, elektrische Isolation und Kontakte sowie die festgelegten Quellen-, Last- und Antennenanschlüsse. Die optionale z-Achse ist nur ein Platzhalter.</div>
 <h2>Bauteile ansehen</h2>
@@ -239,7 +265,43 @@ status.textContent=successes+" Datei(en) geprüft. "+
 if(successes)resetView();
 }
 
-try{init()}catch(err){loading.textContent="3D-Ansicht nicht verfügbar: "+err.message}
+
+const guideSteps=[
+{tag:"1 · Die Forschungsfrage",title:"Worum geht es?",lead:"Wir untersuchen, ob bestimmte räumliche Anordnungen elektrischer Leiter und Kugelschalen die Verteilung und Kopplung elektromagnetischer Felder verändern.",detail:"Das ist eine prüfbare Forschungsfrage: verschiedene Geometrien lassen sich unter gleichen Bedingungen berechnen und miteinander vergleichen.",boundary:"Noch kein Nachweis für höhere Effizienz, zusätzliche Energie oder eine fertige Anlage.",show:["merkaba","s1","s2","s3"]},
+{tag:"2 · Was hier sichtbar ist",title:"Eine Idee wird zu einer definierten Geometrie",lead:"Drei Kugelschalen S1, S2 und S3 und zwei ineinanderliegende Tetraeder bilden hier ein vereinfachtes räumliches Schema.",detail:"Radien, Abstände und Verhältnisse werden als Zahlen und Formeln festgelegt. Dadurch kann jemand anders die Anordnung nachvollziehen und unabhängig überprüfen.",boundary:"Dieses 3D-Bild zeigt nicht die vollständige Leiterführung, alle Öffnungen, Anschlüsse oder Materialgrenzen.",show:["merkaba","s1","s2","s3"]},
+{tag:"3 · Was schon getan wurde",title:"Programme und Tests statt bloßer Behauptungen",lead:"Es gibt CAD-Skripte, geometrische Prüfungen, dokumentierte Testläufe und begrenzte erfolgreiche Einzeltests – einschließlich einer isolierten Verbindung aus drei B-Leitersegmenten.",detail:"Automatische GitHub-Prüfungen halten fest, mit welcher Codeversion ein Ergebnis entstanden ist. Auch Fehlschläge bleiben überprüfbar erhalten.",boundary:"Bestandene Einzeltests sind kein vollständiges funktionierendes Gerät und kein Nachweis einer Energiewirkung.",show:["merkaba","s1","s2"]},
+{tag:"4 · Warum rote Fehler wichtig sind",title:"Der aktuelle Engpass ist konkret",lead:"Ein globaler CAD-Versuch lieferte fünf getrennte Volumenkörper; ein anderer Versuch erzeugte ein degeneriertes Kleinstfragment.",detail:"Darum prüfen wir lokale Verbindungen, bevor wir ein gemeinsames Tetraedernetz erzeugen. Ein roter Test sagt uns, welche technische Voraussetzung noch fehlt.",boundary:"Dieser Viewer zeigt nicht das fehlerhafte CAD-Volumen selbst. Die Ergebnisse stammen aus separaten, protokollierten Rechenläufen.",show:["merkaba","s1"]},
+{tag:"5 · Das nächste überprüfbare Ziel",title:"Ein gültiges Netz und eine Elmer-Simulation",lead:"Zunächst brauchen wir eine durchgängige, sauber vernetzte Geometrie mit definierten Kupfer-, Isolations- und Luftbereichen.",detail:"Erst damit können passende elektromagnetische Randbedingungen und Anregungen in Elmer gerechnet werden. Später zählen auch Netzkonvergenz, Vergleichsmodelle und die vollständige Energiebilanz.",boundary:"Die vollständige STA hat diesen Schritt noch nicht bestanden. Die energiephysikalische Hypothese ist weiterhin offen.",show:["s1","s2","s3"]},
+{tag:"6 · Warum diese Arbeit einen Wert hat",title:"Der Wert liegt auch im überprüfbaren Entwicklungsweg",lead:"Aus einer Idee wurden definierte Maße, CAD-Modelle, Python-Code, Prüfverfahren und nachvollziehbare Ergebnisse – einschließlich Fehlerdiagnosen.",detail:"Das ist reale technische Entwicklungsarbeit. Ob daraus ein wissenschaftlicher Durchbruch, ein Produkt oder Einnahmen entstehen, muss getrennt geprüft werden. Ziel ist eine messbare Antwort, auch wenn sie negativ ausfällt.",boundary:"Der Wert der Arbeit bedeutet nicht automatisch, dass ihre Ausgangshypothese richtig oder das Projekt wirtschaftlich erfolgreich ist.",show:["merkaba","s1","s2","s3"]}
+];
+let guideIndex=0;
+function renderGuide(){
+ const item=guideSteps[guideIndex];
+ document.getElementById("guideTag").textContent=item.tag;
+ document.getElementById("guideTitle").textContent=item.title;
+ document.getElementById("guideLead").textContent=item.lead;
+ document.getElementById("guideDetail").textContent=item.detail;
+ document.getElementById("guideBoundary").textContent="Wichtig: "+item.boundary;
+ document.getElementById("guideCount").textContent=(guideIndex+1)+" / "+guideSteps.length;
+ document.getElementById("guidePrev").disabled=guideIndex===0;
+ document.getElementById("guideNext").textContent=guideIndex===guideSteps.length-1?"Von vorn ↺":"Weiter →";
+ // Do not overwrite an imported OBJ/STL; restore existing reference via its normal UI.
+ const back=document.getElementById("backModel");
+ if(!back.hidden)back.click();
+ for(const name of ["merkaba","s1","s2","s3","crossings","spikes"]){
+  const visible=item.show.includes(name);
+  if(layers[name])layers[name].visible=visible;
+  const toggle=document.querySelector('[data-layer="'+name+'"]');
+  if(toggle)toggle.checked=visible;
+ }
+}
+function initGuide(){
+ document.getElementById("guidePrev").addEventListener("click",()=>{guideIndex=Math.max(0,guideIndex-1);renderGuide()});
+ document.getElementById("guideNext").addEventListener("click",()=>{guideIndex=(guideIndex+1)%guideSteps.length;renderGuide()});
+ renderGuide();
+}
+
+try{init();initGuide()}catch(err){loading.textContent="3D-Ansicht nicht verfügbar: "+err.message}
 </script>
 </body>
 </html>
